@@ -1,0 +1,14 @@
+{
+    "name": "eltharin/ajaxresponser",
+    "autoload": {
+        "psr-4": {
+            "Eltharin\\AjaxResponserBundle\\": "src/"
+        }
+    },    
+	"description": "AjaxResponser Bundle for symfony",
+    "keywords": ["Symfony", "JS","CSS", "Web", "Bundle"],
+    "license": "GPL-3.0",
+	"type": "symfony-bundle",
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

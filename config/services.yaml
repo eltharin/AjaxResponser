@@ -1,0 +1,7 @@
+services:
+  Eltharin\AjaxResponserBundle\EventListener\AjaxResponseConverterEventSubscriber:
+    arguments:
+      - '@http_kernel'
+      - '@Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface'
+    tags:
+      - { name: kernel.event_subscriber }
