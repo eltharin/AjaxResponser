@@ -29,11 +29,11 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 
 	public function onKernelResponse(ResponseEvent $event)
 	{
-		if(!$event->isMainRequest())
+		if(!$event->isMainRequest() || !$event->getRequest()->attributes->has('_controller'))
 		{
 			return;
 		}
-
+		
 		list($controller, $method) = explode('::', $event->getRequest()->attributes->get('_controller'));
 
 		try {
