@@ -2,6 +2,7 @@
 
 namespace Eltharin\AjaxResponserBundle;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Eltharin\AjaxResponserBundle\EventListener\AjaxResponseConverterEventSubscriber;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -19,6 +20,7 @@ class EltharinAjaxResponserBundle extends AbstractBundle
 			->args([
 				service('http_kernel'),
 				service(ClassMetadataFactoryInterface::class),
+				service(EntityManagerInterface::class),
 			])
 			->tag('kernel.event_subscriber')
 		;

@@ -1,6 +1,7 @@
 <?php
 namespace Eltharin\AjaxResponserBundle\EventListener;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Eltharin\AjaxResponserBundle\Annotations\AjaxCallOrNot;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,7 +16,7 @@ use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 {
 	private $exception = null;
-	public function __construct(private HttpKernel $kernel, private ClassMetadataFactoryInterface $classMetadataFactory)
+	public function __construct(private HttpKernel $kernel, private ClassMetadataFactoryInterface $classMetadataFactory, private EntityManagerInterface $entityManager)
 	{
 	}
 
@@ -33,7 +34,7 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 		{
 			return;
 		}
-		
+
 		list($controller, $method) = explode('::', $event->getRequest()->attributes->get('_controller'));
 
 		try {
@@ -99,6 +100,8 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 
 	public function getForwardContent(ResponseEvent $event)
 	{
+		$this->entityManager->clear();
+
 		$subRequest = Request::create(
 			$event->getResponse()->getTargetUrl(),
 			'GET',
