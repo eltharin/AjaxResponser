@@ -1,6 +1,7 @@
 <?php
 namespace Eltharin\AjaxResponserBundle\EventListener;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Eltharin\AjaxResponserBundle\Annotations\AjaxCallOrNot;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,7 +16,7 @@ use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 {
 	private $exception = null;
-	public function __construct(private HttpKernel $kernel, private ClassMetadataFactoryInterface $classMetadataFactory)
+	public function __construct(private HttpKernel $kernel, private ClassMetadataFactoryInterface $classMetadataFactory, private EntityManagerInterface $entityManager)
 	{
 	}
 
@@ -29,7 +30,7 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 
 	public function onKernelResponse(ResponseEvent $event)
 	{
-		if(!$event->isMainRequest())
+		if(!$event->isMainRequest() || !$event->getRequest()->attributes->has('_controller'))
 		{
 			return;
 		}
@@ -46,8 +47,10 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 
 		$response = $event->getResponse();
 
-		if(!empty($controllerMetaData->getReflectionClass()->getMethod($method)->getAttributes(AjaxCallOrNot::class)))
+		if(!empty($attribute = $controllerMetaData->getReflectionClass()->getMethod($method)->getAttributes(AjaxCallOrNot::class)))
 		{
+			$attribute = $attribute[0];
+
 			if( $event->getRequest()->isXmlHttpRequest())
 			{
 				$data = [
@@ -70,7 +73,10 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 
 						$response->setStatusCode(200);
 
-						$data['content'] = $this->getForwardContent($event);
+						if(!array_key_exists('getRedirectContent', $attribute->getArguments()) || $attribute->getArguments()['getRedirectContent'] == true)
+						{
+							$data['content'] = $this->getRedirectContent($event);
+						}
 					}
 				}
 				elseif(substr($response->getStatusCode(),0,1) == '4' || substr($response->getStatusCode(),0,1) == '5')
@@ -97,8 +103,10 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 		$this->exception = $event->getThrowable();
 	}
 
-	public function getForwardContent(ResponseEvent $event)
+	public function getRedirectContent(ResponseEvent $event)
 	{
+		$this->entityManager->clear();
+
 		$subRequest = Request::create(
 			$event->getResponse()->getTargetUrl(),
 			'GET',
