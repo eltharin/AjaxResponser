@@ -35,7 +35,7 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 			return;
 		}
 
-		list($controller, $method) = explode('::', $event->getRequest()->attributes->get('_controller'));
+		list($controller, $method) = explode('::', $event->getRequest()->attributes->get('_controller')) + [1 => '__invoke'];
 
 		try {
 			$controllerMetaData = $this->classMetadataFactory->getMetadataFor($controller);
