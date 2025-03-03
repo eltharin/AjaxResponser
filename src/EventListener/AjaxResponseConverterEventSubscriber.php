@@ -4,6 +4,7 @@ namespace Eltharin\AjaxResponserBundle\EventListener;
 use Doctrine\ORM\EntityManagerInterface;
 use Eltharin\AjaxResponserBundle\Annotations\AjaxCallOrNot;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
@@ -12,6 +13,7 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
+use Symfony\Component\DomCrawler\Crawler;
 
 class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 {
@@ -77,6 +79,14 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 						{
 							$data['content'] = $this->getRedirectContent($event);
 						}
+
+                        if(array_key_exists('selectorOnAjax', $attribute->getArguments()) && $attribute->getArguments()['selectorOnAjax'] !== null)
+                        {
+                            $selector = $attribute->getArguments()['selectorOnAjax'];
+                            $crawler = new Crawler($data['content']);
+
+                            $data['content'] = $crawler->filter($attribute->getArguments()['selectorOnAjax'])->first()->outerHtml();
+                        }
 					}
 				}
 				elseif(substr($response->getStatusCode(),0,1) == '4' || substr($response->getStatusCode(),0,1) == '5')
