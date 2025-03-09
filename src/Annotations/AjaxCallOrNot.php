@@ -10,7 +10,6 @@ class AjaxCallOrNot implements MappingAttribute
 {
 	public function __construct(
 		private bool $getRedirectContent = true,
-		private mixed $selectorOnAjax = null,
 	) {
 	}
 }

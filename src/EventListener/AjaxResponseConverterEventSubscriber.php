@@ -70,7 +70,6 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 				{
 					if(($event->getRequest()->headers->get('x-redirect-type') == null || $event->getRequest()->headers->get('x-redirect-type') == "forward"))
 					{
-						$data['redirectUrl'] = $response->headers->get('Location');
 						$response->headers->remove('Location');
 
 						$response->setStatusCode(200);
@@ -80,12 +79,11 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 							$data['content'] = $this->getRedirectContent($event);
 						}
 
-                        if(array_key_exists('selectorOnAjax', $attribute->getArguments()) && $attribute->getArguments()['selectorOnAjax'] !== null)
+                        if($event->getRequest()->headers->get('x-section') !== null)
                         {
-                            $selector = $attribute->getArguments()['selectorOnAjax'];
+                            $selector = $event->getRequest()->headers->get('x-section');
                             $crawler = new Crawler($data['content']);
-
-                            $data['content'] = $crawler->filter($attribute->getArguments()['selectorOnAjax'])->first()->outerHtml();
+                            $data['content'] = $crawler->filter($event->getRequest()->headers->get('x-section'))->first()->outerHtml();
                         }
 					}
 				}
@@ -118,7 +116,7 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 		$this->entityManager->clear();
 
 		$subRequest = Request::create(
-			$event->getResponse()->getTargetUrl(),
+            $event->getRequest()->headers->get('x-redirect-to') ?? $event->getResponse()->getTargetUrl(),
 			'GET',
 			[],
 			$event->getRequest()->cookies->all(),
