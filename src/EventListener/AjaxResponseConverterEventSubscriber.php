@@ -30,7 +30,7 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 		];
 	}
 
-	public function onKernelResponse(ResponseEvent $event)
+	public function onKernelResponse(ResponseEvent $event): void
 	{
 		if(!$event->isMainRequest() || !$event->getRequest()->attributes->has('_controller'))
 		{
@@ -66,27 +66,29 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 				$data['msgs'] = $event->getRequest()->getSession()->getFlashBag()->all();
 				$data['header'] = $event->getRequest()->headers->get('x-with-redirect');
 
-				if(substr($response->getStatusCode(),0,1) == '3')
-				{
-					if(($event->getRequest()->headers->get('x-redirect-type') == null || $event->getRequest()->headers->get('x-redirect-type') == "forward"))
-					{
-						$response->headers->remove('Location');
-
-						$response->setStatusCode(200);
-
-						if(!array_key_exists('getRedirectContent', $attribute->getArguments()) || $attribute->getArguments()['getRedirectContent'] == true)
-						{
-							$data['content'] = $this->getRedirectContent($event);
-						}
-
-                        if($event->getRequest()->headers->get('x-section') !== null)
+                if(substr($response->getStatusCode(),0,1) == '2' || substr($response->getStatusCode(),0,1) == '3')
+                {
+                    if($event->getRequest()->headers->get('x-redirect-to') || substr($response->getStatusCode(),0,1) == '3')
+                    {
+                        if($event->getRequest()->headers->get('x-redirect-to') || $event->getRequest()->headers->get('x-redirect-type') == null || $event->getRequest()->headers->get('x-redirect-type') == "forward")
                         {
-                            $selector = $event->getRequest()->headers->get('x-section');
-                            $crawler = new Crawler($data['content']);
-                            $data['content'] = $crawler->filter($event->getRequest()->headers->get('x-section'))->first()->outerHtml();
+                            if(!array_key_exists('getRedirectContent', $attribute->getArguments()) || $attribute->getArguments()['getRedirectContent'] == true)
+                            {
+                                $subResponse = $this->getRedirectContent($event);
+                                $data['content'] = $subResponse->getContent();
+                                $response->headers->remove('Location');
+                                $response->setStatusCode($subResponse->getStatusCode());
+                            }
                         }
-					}
-				}
+                    }
+
+                    if($event->getRequest()->headers->get('x-section') !== null)
+                    {
+                        $selector = $event->getRequest()->headers->get('x-section');
+                        $crawler = new Crawler($data['content']);
+                        $data['content'] = $crawler->filter($event->getRequest()->headers->get('x-section'))->first()->outerHtml();
+                    }
+                }
 				elseif(substr($response->getStatusCode(),0,1) == '4' || substr($response->getStatusCode(),0,1) == '5')
 				{
 					if($this->exception !== null)
@@ -106,12 +108,12 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 		}
 	}
 
-	public function onKernelException(ExceptionEvent $event)
+	public function onKernelException(ExceptionEvent $event): void
 	{
 		$this->exception = $event->getThrowable();
 	}
 
-	public function getRedirectContent(ResponseEvent $event)
+	public function getRedirectContent(ResponseEvent $event): Response
 	{
 		$this->entityManager->clear();
 
@@ -126,6 +128,6 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
 
 		$subRequest->setSession($event->getRequest()->getSession());
 
-		return $this->kernel->handle($subRequest, HttpKernelInterface::SUB_REQUEST)->getContent();
+		return $this->kernel->handle($subRequest, HttpKernelInterface::SUB_REQUEST);
 	}
 }
