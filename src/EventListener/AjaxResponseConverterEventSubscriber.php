@@ -85,8 +85,15 @@ class AjaxResponseConverterEventSubscriber implements EventSubscriberInterface
                     if($event->getRequest()->headers->get('x-section') !== null)
                     {
                         $selector = $event->getRequest()->headers->get('x-section');
-                        $crawler = new Crawler($data['content']);
-                        $data['content'] = $crawler->filter($event->getRequest()->headers->get('x-section'))->first()->outerHtml();
+                        try {
+                            $crawler = new Crawler($data['content']);
+                            $data['content'] = $crawler->filter($event->getRequest()->headers->get('x-section'))->first()->outerHtml();
+                        }
+                        catch(\Exception $e)
+                        {
+                            $data['crawler_error'] = $e;
+                        }
+
                     }
                 }
 				elseif(substr($response->getStatusCode(),0,1) == '4' || substr($response->getStatusCode(),0,1) == '5')
